@@ -13,6 +13,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'fingerprinting/location_data.dart';
+import 'floor/image.dart';
 
 
 void main() async {
@@ -60,6 +61,9 @@ class _MyAppState extends State<MyApp> {
 
   bool get isStreaming => subscription != null;
 
+  String selectedImage = FloorId.apartment; // Stores the selected image
+  Offset? pinPosition; // Stores pin position
+
   Future<void> _startScan(BuildContext context) async {
     // check if "can" startScan
     if (shouldCheckCan) {
@@ -83,9 +87,9 @@ class _MyAppState extends State<MyApp> {
     saveWifiFingerprintSubscription = WiFiScan.instance.onScannedResultsAvailable
         .listen((result) => rfFingerprintService.saveFingerprintData(
         LocationData(locationId: "location_demo",
-            floorPlanId: FloorId.apartment,
-            locationX: 0,
-            locationY: 0,
+            floorPlanId: selectedImage,
+            locationX: pinPosition!.dx,
+            locationY: pinPosition!.dy,
             positioningData: result.map((el) => PositioningData(ssid: el.ssid,
                 bssid: el.bssid,
                 rssi: el.level
@@ -153,6 +157,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
           title: const Text('WiFi Positioning System'),
@@ -171,6 +176,20 @@ class _MyAppState extends State<MyApp> {
               mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ImageSelectorWidget(
+                  selectedImage: selectedImage,
+                  pinPosition: pinPosition,
+                  onImageChanged: (newImage) {
+                    setState(() {
+                      selectedImage = newImage;
+                      pinPosition = null; // Reset pin when changing image
+                    });
+                  },
+                  onPinPlaced: (newPin) {
+                    setState(() {
+                      pinPosition = newPin;
+                    });
+                  },),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [

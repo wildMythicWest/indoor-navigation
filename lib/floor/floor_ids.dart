@@ -11,4 +11,6 @@ class FloorId {
   static const String theMallFloor0 = "the_mall_floor_0.jpeg";
   static const String theMallFloor1 = "the_mall_floor_1.jpeg";
   static const String theMallFloor2 = "the_mall_floor_2.jpeg";
+
+  static const List<String> allPlans = [apartment, theMallFloor0, theMallFloor1, theMallFloor2, theMallFloorMinus1, theMallFloorMinus2, theMallFloorMinus3];
 }
