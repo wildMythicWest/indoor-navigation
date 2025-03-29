@@ -6,9 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:indoor_navigation/fingerprinting/positioning_data.dart';
 import 'package:indoor_navigation/fingerprinting/rf_fingerprint_service.dart';
+import 'package:indoor_navigation/floor/floor_ids.dart';
+import 'package:uuid/uuid.dart';
 import 'package:wifi_scan/wifi_scan.dart';
 
 import 'package:permission_handler/permission_handler.dart';
+
+import 'fingerprinting/location_data.dart';
 
 
 void main() async {
@@ -77,12 +81,17 @@ class _MyAppState extends State<MyApp> {
     saveWifiFingerprintSubscription?.cancel();
     saveWifiFingerprintSubscription = null;
     saveWifiFingerprintSubscription = WiFiScan.instance.onScannedResultsAvailable
-        .listen((result) => rfFingerprintService.saveFingerprintData(result.map((el) =>
-        PositioningData(ssid: el.ssid, bssid: el.bssid, rssi: el.level, floorPlanId: "null", locationX: 0, locationY: 0)).toList()));
+        .listen((result) => rfFingerprintService.saveFingerprintData(
+        LocationData(locationId: "location_demo",
+            floorPlanId: FloorId.apartment,
+            locationX: 0,
+            locationY: 0,
+            positioningData: result.map((el) => PositioningData(ssid: el.ssid,
+                bssid: el.bssid,
+                rssi: el.level
+                )
+            ).toList())));
   }
-
-
-
 
   Future<bool> _canGetScannedResults(BuildContext context) async {
     if (shouldCheckCan) {

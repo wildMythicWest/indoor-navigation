@@ -42,6 +42,8 @@ dependencies:
   firebase_storage: ^12.4.4
   device_info_plus: ^11.3.3
   flutter_dotenv: ^5.2.1
+  vector_math: ^2.1.4
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +70,13 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - .env
+    - assets/apartment_floor_plan.jpeg
+    - assets/the_mall_floor_0.jpeg
+    - assets/the_mall_floor_1.jpeg
+    - assets/the_mall_floor_2.jpeg
+    - assets/the_mall_floor_minus_1.jpeg
+    - assets/the_mall_floor_minus_2.jpeg
+    - assets/the_mall_floor_minus_3.jpeg
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
