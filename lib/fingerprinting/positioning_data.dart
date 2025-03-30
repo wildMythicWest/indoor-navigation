@@ -1,7 +1,3 @@
-
-
-import 'package:indoor_navigation/fingerprinting/location_data.dart';
-
 class PositioningData {
 
   final String ssid; // name of network

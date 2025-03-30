@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indoor_navigation/fingerprinting/rf_fingerprint_service.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
 import 'floor_ids.dart';
@@ -10,11 +11,14 @@ class ImageSelectorWidget extends StatefulWidget {
   final Function(String) onImageChanged;
   final Function(Offset) onPinPlaced;
 
+  final LocationsRepository locationsRepository;
+
   const ImageSelectorWidget({super.key,
     required this.selectedImage,
     required this.pinPosition,
     required this.onImageChanged,
     required this.onPinPlaced,
+    required this.locationsRepository,
   });
 
   @override
@@ -24,6 +28,18 @@ class ImageSelectorWidget extends StatefulWidget {
 class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
 
   final TransformationController _transformationController = TransformationController();
+  List<Offset> savedPinPositions = []; // Green pins (loaded positions)
+  bool showSavedPins = false; // Toggle state
+
+  // Fetch saved positions from repository
+  void fetchSavedPositions() async {
+    List<Offset> positions = (await widget.locationsRepository.getAllLocationsOnFloor(widget.selectedImage, false))
+        .map((data) => Offset(data.locationX, data.locationY))
+        .toList();
+    setState(() {
+      savedPinPositions = positions;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +60,19 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
               }).toList(),
             ),
           ),
+          // Toggle Button for Saved Pins
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  showSavedPins = !showSavedPins;
+                  if (showSavedPins) fetchSavedPositions();
+                });
+              },
+              child: Text(showSavedPins ? "Hide Saved Locations" : "Show Saved Locations"),
+            ),
+          ),
 
           LayoutBuilder(
             builder: (context, constraints) {
@@ -60,7 +89,7 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
 
                   widget.onPinPlaced(Offset(transformedPosition.x, transformedPosition.y));
 
-                  print("Pin placed at: ${widget.pinPosition!.dx}, ${widget.pinPosition!.dy}");
+                  print("Pin placed at: ${transformedPosition.x}, ${transformedPosition.y}");
                 },
                 child: InteractiveViewer(
                   transformationController: _transformationController,
@@ -86,6 +115,19 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
                             size: 24,
                           ),
                         ),
+
+                      // Show green pins (saved locations) when toggled on
+                      if (showSavedPins)
+                        for (var savedPin in savedPinPositions)
+                          Positioned(
+                            left: savedPin.dx - 12,
+                            top: savedPin.dy - 24,
+                            child: Icon(
+                              Icons.location_on,
+                              color: Colors.green,
+                              size: 24,
+                            ),
+                          ),
                     ],
                   ),
                 ),

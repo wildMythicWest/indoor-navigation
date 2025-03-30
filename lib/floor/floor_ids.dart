@@ -1,5 +1,3 @@
-
-
 class FloorId {
   // home
   static const String apartment = "apartment_floor_plan.jpeg";

@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:indoor_navigation/fingerprinting/fingerprint_data.dart';
 import 'package:indoor_navigation/fingerprinting/positioning_data.dart';
 import 'package:indoor_navigation/fingerprinting/rf_fingerprint_service.dart';
 import 'package:indoor_navigation/floor/floor_ids.dart';
@@ -53,7 +54,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  RfFingerprintService rfFingerprintService = RfFingerprintService();
+  LocationsRepository locationsRepository = LocationsRepository();
   List<WiFiAccessPoint> accessPoints = <WiFiAccessPoint>[];
   StreamSubscription<List<WiFiAccessPoint>>? subscription;
   StreamSubscription<List<WiFiAccessPoint>>? saveWifiFingerprintSubscription;
@@ -85,16 +86,19 @@ class _MyAppState extends State<MyApp> {
     saveWifiFingerprintSubscription?.cancel();
     saveWifiFingerprintSubscription = null;
     saveWifiFingerprintSubscription = WiFiScan.instance.onScannedResultsAvailable
-        .listen((result) => rfFingerprintService.saveFingerprintData(
-        LocationData(locationId: "location_demo",
+        .listen((result) => locationsRepository.saveFingerprintData(
+        FingerprintData(
+          locationData: LocationData(
+            locationId: Uuid().v4(),
             floorPlanId: selectedImage,
             locationX: pinPosition!.dx,
             locationY: pinPosition!.dy,
-            positioningData: result.map((el) => PositioningData(ssid: el.ssid,
-                bssid: el.bssid,
-                rssi: el.level
-                )
-            ).toList())));
+          ),
+          positioningData: result.map((el) => PositioningData(ssid: el.ssid,
+              bssid: el.bssid,
+              rssi: el.level
+              )
+          ).toList())));
   }
 
   Future<bool> _canGetScannedResults(BuildContext context) async {
@@ -161,13 +165,13 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         appBar: AppBar(
           title: const Text('WiFi Positioning System'),
-          actions: [
-            _buildToggle(
-                label: "Check can?",
-                value: shouldCheckCan,
-                onChanged: (v) => setState(() => shouldCheckCan = v),
-                activeColor: Colors.purple)
-          ],
+          // actions: [
+          //   _buildToggle(
+          //       label: "Check can?",
+          //       value: shouldCheckCan,
+          //       onChanged: (v) => setState(() => shouldCheckCan = v),
+          //       activeColor: Colors.purple)
+          // ],
         ),
         body: Builder(
           builder: (context) => Padding(
@@ -177,6 +181,7 @@ class _MyAppState extends State<MyApp> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ImageSelectorWidget(
+                  locationsRepository: locationsRepository,
                   selectedImage: selectedImage,
                   pinPosition: pinPosition,
                   onImageChanged: (newImage) {
