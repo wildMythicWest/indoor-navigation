@@ -7,7 +7,7 @@ import 'floor_ids.dart';
 class ImageSelectorWidget extends StatefulWidget {
 
   final String selectedImage;
-  final Offset? pinPosition;
+  final List<Pin> pins;
   final Function(String) onImageChanged;
   final Function(Offset) onPinPlaced;
 
@@ -15,7 +15,7 @@ class ImageSelectorWidget extends StatefulWidget {
 
   const ImageSelectorWidget({super.key,
     required this.selectedImage,
-    required this.pinPosition,
+    required this.pins,
     required this.onImageChanged,
     required this.onPinPlaced,
     required this.locationsRepository,
@@ -28,18 +28,6 @@ class ImageSelectorWidget extends StatefulWidget {
 class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
 
   final TransformationController _transformationController = TransformationController();
-  List<Offset> savedPinPositions = []; // Green pins (loaded positions)
-  bool showSavedPins = false; // Toggle state
-
-  // Fetch saved positions from repository
-  void fetchSavedPositions() async {
-    List<Offset> positions = (await widget.locationsRepository.getAllLocationsOnFloor(widget.selectedImage, false))
-        .map((data) => Offset(data.locationX, data.locationY))
-        .toList();
-    setState(() {
-      savedPinPositions = positions;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,19 +46,6 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
                   child: Text(image), // Show filename only
                 );
               }).toList(),
-            ),
-          ),
-          // Toggle Button for Saved Pins
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  showSavedPins = !showSavedPins;
-                  if (showSavedPins) fetchSavedPositions();
-                });
-              },
-              child: Text(showSavedPins ? "Hide Saved Locations" : "Show Saved Locations"),
             ),
           ),
 
@@ -100,34 +75,21 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
                     children: [
                       Center(
                         child: Image.asset(
-                          'assets/${widget.selectedImage}', // Replace with your image path
+                          'assets/${widget.selectedImage}',
                           width: double.infinity,
                           fit: BoxFit.contain,
                         ),
                       ),
-                      if (widget.pinPosition != null)
+                      for (var savedPin in widget.pins)
                         Positioned(
-                          left: widget.pinPosition!.dx - 12, // Adjust for center alignment
-                          top: widget.pinPosition!.dy - 24,
+                          left: savedPin.pinPosition.dx - 12,
+                          top: savedPin.pinPosition.dy - 24,
                           child: Icon(
                             Icons.location_on,
-                            color: Colors.red,
+                            color: savedPin.color,
                             size: 24,
                           ),
                         ),
-
-                      // Show green pins (saved locations) when toggled on
-                      if (showSavedPins)
-                        for (var savedPin in savedPinPositions)
-                          Positioned(
-                            left: savedPin.dx - 12,
-                            top: savedPin.dy - 24,
-                            child: Icon(
-                              Icons.location_on,
-                              color: Colors.green,
-                              size: 24,
-                            ),
-                          ),
                     ],
                   ),
                 ),
@@ -140,7 +102,7 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
 }
 
 class Pin {
-  final Offset? pinPosition;
+  final Offset pinPosition;
   final Color color;
 
   const Pin({required this.pinPosition, required this.color,});

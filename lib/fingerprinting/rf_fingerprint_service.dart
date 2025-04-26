@@ -37,7 +37,6 @@ class LocationsRepository {
   }
 
   Future<List<LocationData>> getAllLocationsOnFloor(String floorPlan, bool forceUpdate) async {
-    return savedLocations;
     if (savedLocations.isNotEmpty && !forceUpdate) {
       return savedLocations;
     }

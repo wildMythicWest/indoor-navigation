@@ -54,19 +54,23 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
     saveWifiFingerprintSubscription?.cancel();
     saveWifiFingerprintSubscription = null;
     saveWifiFingerprintSubscription = WiFiScan.instance.onScannedResultsAvailable
-        .listen((result) => locationsRepository.saveFingerprintData(
-        FingerprintData(
-            locationData: LocationData(
-              locationId: Uuid().v4(),
-              floorPlanId: selectedImage,
-              locationX: pinPosition!.dx,
-              locationY: pinPosition!.dy,
-            ),
-            positioningData: result.map((el) => PositioningData(ssid: el.ssid,
-                bssid: el.bssid,
-                rssi: el.level
-            )
-            ).toList())));
+        .listen((result) {
+      locationsRepository.saveFingerprintData(
+          FingerprintData(
+              locationData: LocationData(
+                locationId: Uuid().v4(),
+                floorPlanId: selectedImage,
+                locationX: pinPosition!.dx,
+                locationY: pinPosition!.dy,
+              ),
+              positioningData: result.map((el) =>
+                  PositioningData(ssid: el.ssid,
+                      bssid: el.bssid,
+                      rssi: el.level
+                  )
+              ).toList()));
+      fetchSavedPositions(); // Reload saved positions map
+    });
   }
 
   Future<bool> _canGetScannedResults(BuildContext context) async {
@@ -113,6 +117,20 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
     super.dispose();
   }
 
+  List<Pin> allPins = []; // Green pins (loaded positions)
+  bool showSavedPins = false; // Toggle state
+
+  // Fetch saved positions from repository
+  void fetchSavedPositions() async {
+    List<Pin> positions = (await locationsRepository.getAllLocationsOnFloor(selectedImage, false))
+        .map((data) => Offset(data.locationX, data.locationY))
+        .map((position) => Pin(pinPosition: position, color: Colors.green))
+        .toList();
+    setState(() {
+      allPins = positions;
+    });
+  }
+
   // build toggle with label
   Widget _buildToggle({
     String? label,
@@ -134,13 +152,6 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
       home: Scaffold(
         appBar: AppBar(
           title: const Text('WiFi Positioning System'),
-          // actions: [
-          //   _buildToggle(
-          //       label: "Check can?",
-          //       value: shouldCheckCan,
-          //       onChanged: (v) => setState(() => shouldCheckCan = v),
-          //       activeColor: Colors.purple)
-          // ],
         ),
         body: Builder(
           builder: (context) => Padding(
@@ -152,7 +163,7 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
                 ImageSelectorWidget(
                   locationsRepository: locationsRepository,
                   selectedImage: selectedImage,
-                  pinPosition: pinPosition,
+                  pins: [...allPins, if (pinPosition != null) Pin(pinPosition: pinPosition!, color: Colors.red)],
                   onImageChanged: (newImage) {
                     setState(() {
                       selectedImage = newImage;
@@ -177,12 +188,27 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
                       label: const Text('GET'),
                       onPressed: () async => _getScannedResults(context),
                     ),
+
                     _buildToggle(
                       label: "STREAM",
                       value: isStreaming,
                       onChanged: (shouldStream) async => shouldStream
                           ? await _startListeningToScanResults(context)
                           : _stopListeningToScanResults(),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          showSavedPins = !showSavedPins;
+                          if (showSavedPins) fetchSavedPositions();
+                        });
+                      },
+                      child: Text(showSavedPins ? "Hide Saved Locations" : "Show Saved Locations"),
                     ),
                   ],
                 ),

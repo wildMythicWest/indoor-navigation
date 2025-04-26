@@ -28,6 +28,7 @@ class _FindMePageState extends State<FindMePage> {
 
   String selectedImage = FloorId.apartment; // Stores the selected image
   Offset? pinPosition; // Stores pin position
+  List<Pin> allPins = [];
 
   Future<void> _findMe(BuildContext context) async {
     // check if "can" startScan
@@ -53,6 +54,9 @@ class _FindMePageState extends State<FindMePage> {
 
     setState(() {
       pinPosition = Offset(foundLocation.locationX, foundLocation.locationY);
+      if (pinPosition != null) {
+        allPins.add(Pin(pinPosition: pinPosition!, color: Colors.red));
+      }
     });
   }
 
@@ -111,16 +115,18 @@ class _FindMePageState extends State<FindMePage> {
                 ImageSelectorWidget(
                   locationsRepository: locationsRepository,
                   selectedImage: selectedImage,
-                  pinPosition: pinPosition,
+                  pins: allPins,
                   onImageChanged: (newImage) {
                     setState(() {
                       selectedImage = newImage;
                       pinPosition = null; // Reset pin when changing image
+                      allPins = [];
                     });
                   },
                   onPinPlaced: (newPin) {
                     setState(() {
                       pinPosition = newPin;
+                      allPins.add(Pin(pinPosition: newPin, color: Colors.red));
                     });
                   },),
                 Row(
@@ -130,6 +136,14 @@ class _FindMePageState extends State<FindMePage> {
                       icon: const Icon(Icons.my_location),
                       label: const Text('Find me'),
                       onPressed: () async => _findMe(context),
+                    ),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.my_location),
+                      label: const Text('Clear'),
+                      onPressed: () => setState(() {
+                        pinPosition = null;
+                        allPins = [];
+                      }),
                     ),
                   ],
                 ),
