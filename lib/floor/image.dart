@@ -138,3 +138,10 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
     );
   }
 }
+
+class Pin {
+  final Offset? pinPosition;
+  final Color color;
+
+  const Pin({required this.pinPosition, required this.color,});
+}

@@ -18,4 +18,10 @@ class PositioningData {
   };
   }
 
+  Map<String, dynamic> toFlatMap() {
+    return {
+      bssid: rssi,
+    };
+  }
+
 }
