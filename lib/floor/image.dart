@@ -11,14 +11,11 @@ class ImageSelectorWidget extends StatefulWidget {
   final Function(String) onImageChanged;
   final Function(Offset) onPinPlaced;
 
-  final LocationsRepository locationsRepository;
-
   const ImageSelectorWidget({super.key,
     required this.selectedImage,
     required this.pins,
     required this.onImageChanged,
     required this.onPinPlaced,
-    required this.locationsRepository,
   });
 
   @override
@@ -53,11 +50,9 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
             builder: (context, constraints) {
               return GestureDetector(
                 onTapDown: (TapDownDetails details) {
-                  // todo maybe  extract
                   final RenderBox box = context.findRenderObject() as RenderBox;
                   final Offset localPosition = box.globalToLocal(details.globalPosition);
 
-                  // Convert to image coordinate space TODO extract
                   final Matrix4 matrix = _transformationController.value;
                   final Matrix4 inverseMatrix = Matrix4.inverted(matrix);
                   final vector_math.Vector3 transformedPosition = inverseMatrix.transform3(vector_math.Vector3(localPosition.dx, localPosition.dy, 0));
@@ -84,11 +79,7 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
                         Positioned(
                           left: savedPin.pinPosition.dx - 12,
                           top: savedPin.pinPosition.dy - 24,
-                          child: Icon(
-                            Icons.location_on,
-                            color: savedPin.color,
-                            size: 24,
-                          ),
+                          child: Icon(Icons.location_on, color: savedPin.color, size: 24,),
                         ),
                     ],
                   ),

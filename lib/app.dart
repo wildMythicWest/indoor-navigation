@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:indoor_navigation/pages/ble_triangulation.dart';
 import 'package:indoor_navigation/pages/find_me_page.dart';
 import 'package:indoor_navigation/pages/fingerprinting_page.dart';
 
 class HomeScreen extends StatefulWidget {
   /// Default constructor for [FindMePage] widget.
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -17,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static final List<Widget> _screens = <Widget>[
     FingerprintingPage(),
     FindMePage(),
-    ScreenThree(),
+    BleTriangulationPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -43,18 +44,11 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Find me',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.bluetooth_searching_sharp),
+            label: 'BLE Triangulation',
           ),
         ],
       ),
     );
-  }
-}
-
-class ScreenThree extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text('Profile Screen'));
   }
 }

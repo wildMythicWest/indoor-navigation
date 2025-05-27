@@ -12,17 +12,15 @@ import '../fingerprinting/location_data.dart';
 import '../floor/image.dart';
 import '../global_utils.dart';
 
-/// Example app for wifi_scan plugin.
 class FingerprintingPage extends StatefulWidget {
   /// Default constructor for [FingerprintingPage] widget.
-  const FingerprintingPage({Key? key}) : super(key: key);
+  const FingerprintingPage({super.key});
 
   @override
   State<FingerprintingPage> createState() => _FingerprintingPageState();
 }
 
 class _FingerprintingPageState extends State<FingerprintingPage> {
-  LocationsRepository locationsRepository = LocationsRepository();
   List<WiFiAccessPoint> accessPoints = <WiFiAccessPoint>[];
   StreamSubscription<List<WiFiAccessPoint>>? subscription;
   StreamSubscription<List<WiFiAccessPoint>>? saveWifiFingerprintSubscription;
@@ -30,46 +28,107 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
 
   bool get isStreaming => subscription != null;
 
-  String selectedImage = FloorId.apartment; // Stores the selected image
-  Offset? pinPosition; // Stores pin position
+  /// Клас за комуникация с базата данни.
+  LocationsRepository locationsRepository = LocationsRepository();
 
+  /// Име на карта на етажа.
+  /// Използва се за зареждане на изображението на картата върху екрана и запазването на сканирана локация в базата данни.
+  String selectedImage = FloorId.theMallFloor0;
+
+  /// Избрана позиция за сканиране върху картата.
+  /// Пази координатите (x, y) на избран пиксел върху изображението.
+  /// Използва се за запазване на сканирана локация в базата данни.
+  Offset? pinPosition;
+
+  /// Метод за сканиране за WiFi мрежи и записване на събраните резултати в база данни.
   Future<void> _startScan(BuildContext context) async {
-    // check if "can" startScan
-    if (shouldCheckCan) {
-      // check if can-startScan
-      final can = await WiFiScan.instance.canStartScan();
-      // if can-not, then show error
-      if (can != CanStartScan.yes) {
-        if (context.mounted) kShowSnackBar(context, "Cannot start scan: $can");
-        return;
-      }
+    // Проверка дали приложението има необходимите права за сканиране за WiFi мрежи
+    final can = await WiFiScan.instance.canStartScan();
+    // Ако липсват права показваме съобщение на екрана.
+    if (can != CanStartScan.yes) {
+      if (context.mounted) kShowSnackBar(context, "Cannot start scan: $can");
+      return;
     }
 
-    // call startScan API
+    // Започване на сканирането и показване на статус на екрана
     final result = await WiFiScan.instance.startScan();
     if (context.mounted) kShowSnackBar(context, "startScan: $result");
-    // reset access points.
-    setState(() => accessPoints = <WiFiAccessPoint>[]);
 
-    saveWifiFingerprintSubscription?.cancel();
-    saveWifiFingerprintSubscription = null;
-    saveWifiFingerprintSubscription = WiFiScan.instance.onScannedResultsAvailable
-        .listen((result) {
-      locationsRepository.saveFingerprintData(
-          FingerprintData(
-              locationData: LocationData(
-                locationId: Uuid().v4(),
-                floorPlanId: selectedImage,
-                locationX: pinPosition!.dx,
-                locationY: pinPosition!.dy,
-              ),
-              positioningData: result.map((el) =>
-                  PositioningData(ssid: el.ssid,
-                      bssid: el.bssid,
-                      rssi: el.level
-                  )
-              ).toList()));
-      fetchSavedPositions(); // Reload saved positions map
+    await collectScanResults();
+    fetchSavedPositions();
+  }
+
+  /// Събиране на резултати от сканирането.
+  /// Резултатите се запазват в база данни.
+  Future<void> collectScanResults() async {
+    List<WiFiAccessPoint> wifiScanData = await collectData(WiFiScan.instance.onScannedResultsAvailable, Duration(seconds: 5));
+
+    Set<String> unique = {};
+    locationsRepository.saveFingerprintData(
+        FingerprintData(
+            locationData: LocationData(
+              locationId: Uuid().v4(),
+              floorPlanId: selectedImage,
+              locationX: pinPosition!.dx,
+              locationY: pinPosition!.dy,
+            ),
+            positioningData: wifiScanData.map((el) =>
+                PositioningData(ssid: el.ssid,
+                    bssid: el.bssid,
+                    rssi: el.level
+                )
+            ).where((el) => unique.add(el.bssid))
+            .toList()));
+  }
+
+  /// Метод за събиране на данни от поток със резултати от сканирането за мрежи.
+  /// Този метод е необходим, защото в противен случай асинхроността на сканирането води до множество отделни записи в базата данни от едно сканиране.
+  /// Това не е желателно защото води до по-неточни резултати.
+  /// [stream] поток със сканирани резултати.
+  /// [timeout] интервал от време за агрегиране на данните. След изтичане на интервала, потокът се затваря и агрегираните резултати се връщат.
+  Future<List<WiFiAccessPoint>> collectData(Stream<List<WiFiAccessPoint>> stream, Duration timeout) async {
+    List<WiFiAccessPoint> results = [];
+    late StreamSubscription<List<WiFiAccessPoint>> subscription;
+    final completer = Completer<List<WiFiAccessPoint>>();
+
+    // Агрегираща функция, резултатите в потока се събират в [results]
+    subscription = stream.listen((data) {
+      results.addAll(data);
+    }, onDone: () {
+      if (!completer.isCompleted) {
+        completer.complete(results);
+      }
+    }, onError: (error) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
+    });
+
+    // Таймер, отброяващ зададения интервал от време.
+    Timer(timeout, () {
+      subscription.cancel();
+      if (!completer.isCompleted) {
+        completer.complete(results);
+      }
+    });
+
+    return completer.future;
+  }
+
+  /// Пин-ове описващи сканирани позиции
+  List<Pin> allPins = [];
+
+  /// Изчертаване на екрана на всички сканирани локации.
+  /// Метода извлича всички данни за положението на сканирани локации и ги задава в променливата [allPins].
+  /// Извикването на метод [setState()] принуждава Flutter да преизчертае компонентите по екрана, които зависят от променените променливи.
+  /// В случая това води до преизчертаване на пин-овете върху изображението на плана на етажа.
+  void fetchSavedPositions() async {
+    List<Pin> positions = (await locationsRepository.getAllLocationsOnFloor(selectedImage, false))
+        .map((data) => Offset(data.locationX, data.locationY))
+        .map((position) => Pin(pinPosition: position, color: Colors.green))
+        .toList();
+    setState(() {
+      allPins = positions;
     });
   }
 
@@ -117,19 +176,7 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
     super.dispose();
   }
 
-  List<Pin> allPins = []; // Green pins (loaded positions)
-  bool showSavedPins = false; // Toggle state
-
-  // Fetch saved positions from repository
-  void fetchSavedPositions() async {
-    List<Pin> positions = (await locationsRepository.getAllLocationsOnFloor(selectedImage, false))
-        .map((data) => Offset(data.locationX, data.locationY))
-        .map((position) => Pin(pinPosition: position, color: Colors.green))
-        .toList();
-    setState(() {
-      allPins = positions;
-    });
-  }
+  bool showSavedPins = false;
 
   // build toggle with label
   Widget _buildToggle({
@@ -161,7 +208,6 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ImageSelectorWidget(
-                  locationsRepository: locationsRepository,
                   selectedImage: selectedImage,
                   pins: [...allPins, if (pinPosition != null) Pin(pinPosition: pinPosition!, color: Colors.red)],
                   onImageChanged: (newImage) {

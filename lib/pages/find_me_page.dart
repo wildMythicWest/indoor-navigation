@@ -10,10 +10,9 @@ import '../fingerprinting/location_data.dart';
 import '../floor/image.dart';
 import '../global_utils.dart';
 
-/// Example app for wifi_scan plugin.
 class FindMePage extends StatefulWidget {
   /// Default constructor for [FindMePage] widget.
-  const FindMePage({Key? key}) : super(key: key);
+  const FindMePage({super.key});
 
   @override
   State<FindMePage> createState() => _FindMePageState();
@@ -26,32 +25,29 @@ class _FindMePageState extends State<FindMePage> {
 
   bool get isStreaming => subscription != null;
 
-  String selectedImage = FloorId.apartment; // Stores the selected image
+  String selectedImage = FloorId.theMallFloor0; // Stores the selected image
   Offset? pinPosition; // Stores pin position
   List<Pin> allPins = [];
 
+  /// Метод за сканиране за WiFi мрежи и намиране на локацията на устройсвото
   Future<void> _findMe(BuildContext context) async {
-    // check if "can" startScan
-    if (shouldCheckCan) {
-      // check if can-startScan
-      final can = await WiFiScan.instance.canStartScan();
-      // if can-not, then show error
-      if (can != CanStartScan.yes) {
-        if (context.mounted) kShowSnackBar(context, "Cannot start scan: $can");
-        return;
-      }
+    // Проверка дали приложението има необходимите права за сканиране за WiFi мрежи
+    final can = await WiFiScan.instance.canStartScan();
+    // Ако липсват права показваме съобщение на екрана.
+    if (can != CanStartScan.yes) {
+      if (context.mounted) kShowSnackBar(context, "Cannot start scan: $can");
+      return;
     }
 
-    // call startScan API
+    // Започване на сканирането и показване на статус на екрана
     final result = await WiFiScan.instance.startScan();
     if (context.mounted) kShowSnackBar(context, "startScan: $result");
-    // reset access points.
 
     List<WiFiAccessPoint> wifiScanData = await collectData(WiFiScan.instance.onScannedResultsAvailable, Duration(seconds: 5));
-
     LocationData foundLocation = await locationsRepository.getCurrentLocation(
     wifiScanData.map((el) => PositioningData(ssid: el.ssid, bssid: el.bssid, rssi: el.level)).toList());
 
+    // Изчертаване на намерената локация на екрана
     setState(() {
       pinPosition = Offset(foundLocation.locationX, foundLocation.locationY);
       if (pinPosition != null) {
@@ -113,7 +109,6 @@ class _FindMePageState extends State<FindMePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ImageSelectorWidget(
-                  locationsRepository: locationsRepository,
                   selectedImage: selectedImage,
                   pins: allPins,
                   onImageChanged: (newImage) {

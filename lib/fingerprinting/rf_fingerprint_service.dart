@@ -17,7 +17,6 @@ class LocationsRepository {
   List<LocationData> savedLocations = [];
 
   Future<void> saveFingerprintData(FingerprintData data) async {
-    return;
     CollectionReference locations = db.collection('locations');
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
     try {

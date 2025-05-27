@@ -1,9 +1,9 @@
 class LocationData {
   final String locationId; //uniquely identifies a place - currently uuid
 
-  final String floorPlanId; // name of image
-  final double locationX; // x coordinate relative to image (or screen idk)
-  final double locationY;// y coordinate relative to image (or screen idk)
+  final String floorPlanId; // name of image of the floor plan
+  final double locationX; // x coordinate relative to image
+  final double locationY;// y coordinate relative to image
 
   LocationData({
     required this.locationId,
