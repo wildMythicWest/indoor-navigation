@@ -27,7 +27,7 @@ class _FindMePageState extends State<FindMePage> {
 
   String selectedImage = FloorId.theMallFloor0; // Stores the selected image
   Offset? pinPosition; // Stores pin position
-  List<Pin> allPins = [];
+  List<Marker> allPins = [];
 
   /// Метод за сканиране за WiFi мрежи и намиране на локацията на устройсвото
   Future<void> _findMe(BuildContext context) async {

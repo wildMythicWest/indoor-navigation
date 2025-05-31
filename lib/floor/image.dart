@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:indoor_navigation/fingerprinting/rf_fingerprint_service.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
 import 'floor_ids.dart';
@@ -7,15 +6,17 @@ import 'floor_ids.dart';
 class ImageSelectorWidget extends StatefulWidget {
 
   final String selectedImage;
-  final List<Pin> pins;
+  final List<Marker> pins;
   final Function(String) onImageChanged;
   final Function(Offset) onPinPlaced;
+  final List<CustomPaint> painters;
 
   const ImageSelectorWidget({super.key,
     required this.selectedImage,
     required this.pins,
     required this.onImageChanged,
     required this.onPinPlaced,
+    this.painters = const [],
   });
 
   @override
@@ -75,11 +76,12 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
                           fit: BoxFit.contain,
                         ),
                       ),
+                        ...widget.painters,
                       for (var savedPin in widget.pins)
                         Positioned(
-                          left: savedPin.pinPosition.dx - 12,
-                          top: savedPin.pinPosition.dy - 24,
-                          child: Icon(Icons.location_on, color: savedPin.color, size: 24,),
+                          left: savedPin.position.dx + savedPin.adjustment.dx,
+                          top: savedPin.position.dy + savedPin.adjustment.dy,
+                          child: savedPin.icon,
                         ),
                     ],
                   ),
@@ -92,9 +94,18 @@ class ImageSelectorWidgetState extends State<ImageSelectorWidget> {
   }
 }
 
-class Pin {
+class Pin extends Marker {
   final Offset pinPosition;
   final Color color;
 
-  const Pin({required this.pinPosition, required this.color,});
+  Pin({required this.pinPosition, required this.color})
+    : super(position: pinPosition, icon: Icon(Icons.location_on, color: color, size: 24,), adjustment: const Offset(-12, -24));
+}
+
+class Marker {
+  final Offset position;
+  final Icon icon;
+  final Offset adjustment;
+
+  Marker({required this.position, required this.icon, required this.adjustment, });
 }

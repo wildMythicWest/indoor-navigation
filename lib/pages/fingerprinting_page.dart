@@ -116,7 +116,7 @@ class _FingerprintingPageState extends State<FingerprintingPage> {
   }
 
   /// Пин-ове описващи сканирани позиции
-  List<Pin> allPins = [];
+  List<Marker> allPins = [];
 
   /// Изчертаване на екрана на всички сканирани локации.
   /// Метода извлича всички данни за положението на сканирани локации и ги задава в променливата [allPins].

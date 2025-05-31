@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:indoor_navigation/pages/ble_triangulation.dart';
+import 'package:indoor_navigation/pages/ble_trilateration.dart';
 import 'package:indoor_navigation/pages/find_me_page.dart';
 import 'package:indoor_navigation/pages/fingerprinting_page.dart';
 
@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static final List<Widget> _screens = <Widget>[
     FingerprintingPage(),
     FindMePage(),
-    BleTriangulationPage(),
+    BleTrilaterationPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bluetooth_searching_sharp),
-            label: 'BLE Triangulation',
+            label: 'BLE Trilateration',
           ),
         ],
       ),
