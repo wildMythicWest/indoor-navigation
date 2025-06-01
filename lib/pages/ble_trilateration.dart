@@ -43,23 +43,26 @@ class _BleTrilaterationPageState extends State<BleTrilaterationPage> {
 
     _isScanningSubscription = FlutterBluePlus.isScanning.listen((state) {
       if (_isScanning == true && state == false) {
-        setState(() {
-          var locationResult = Trilateration.findMe(_scanResults);
-          circles = locationResult.originAndRadius.entries
-              .map((entry) => CirclePainter(center: Offset(entry.key.x, entry.key.y), radius: entry.value) as CustomPainter)
-              .map((painter) => CustomPaint(painter: painter,))
-          .toList();
-          pinPosition = locationResult.position;
-          //allPins = [];
-          allPins.add(Pin(pinPosition: pinPosition!, color: Colors.red));
-          allPins.addAll(locationResult.originAndRadius.entries
-              .map((entry) => Marker(position: Offset(entry.key.x, entry.key.y), icon: Icon(Icons.add, color: Colors.cyanAccent, size: 24,), adjustment: Offset(-14, -14)))
-              .toList());
-        });
+        processScanResults(_scanResults);
       }
       if (mounted) {
         setState(() => _isScanning = state);
       }
+    });
+  }
+
+  void processScanResults(List<ScanResult> scanResults) {
+    setState(() {
+      var locationResult = Trilateration.findMe(scanResults);
+      circles = locationResult.originAndRadius.entries
+          .map((entry) => CirclePainter(center: Offset(entry.key.x, entry.key.y), radius: entry.value) as CustomPainter)
+          .map((painter) => CustomPaint(painter: painter,))
+          .toList();
+      pinPosition = locationResult.position;
+      allPins.add(Pin(pinPosition: pinPosition!, color: Colors.red));
+      allPins.addAll(locationResult.originAndRadius.entries
+          .map((entry) => Marker(position: Offset(entry.key.x, entry.key.y), icon: Icon(Icons.add, color: Colors.cyanAccent, size: 24,), adjustment: Offset(-14, -14)))
+          .toList());
     });
   }
 
@@ -70,9 +73,6 @@ class _BleTrilaterationPageState extends State<BleTrilaterationPage> {
     super.dispose();
   }
 
-  /// see https://github.com/chipweinberger/flutter_blue_plus/blob/master/packages/flutter_blue_plus/example/lib/screens/scan_screen.dart
-  /// This is basically what is needed.
-  /// Only difference is that when findMe is pressed, the location data is updated, not the scanResults and a pin is placed on the map.
   Future<void> _scan(BuildContext context) async {
     /// first attach a listener to result stream
     await FlutterBluePlus.startScan(

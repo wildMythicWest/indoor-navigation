@@ -17,31 +17,23 @@ class Trilateration {
 
   static LocationResult findMe(List<ScanResult> scanResults) {
     Map<RealSpacePoint, double> distancesMap = {};
-    // find distance to all devices
     for (var result in scanResults) {
-      // print(result);
-      // if (result.rssi < -75) continue;
-
       Beacon device = Beacon.values
           .firstWhere((item) => item.id == result.device.remoteId.str);
-
-      double powerD0 = device.rssiAtZeroDistance.toDouble();
-
-      double powerD = result.rssi.toDouble();
-      double d0 = 1; // 1 meter away
-      double n = 3;
-
-      // d is in meters
-      double d = d0 * pow(10, (powerD0 - powerD) / (10 * n));
-
+      double d = rssiToDistance(device.rssiAtZeroDistance, result.rssi);
       distancesMap[device.location.imageToReal()] = d;
-      print("Device ${device.name} - rssi $powerD - at distance $d");
     }
-
-    // find trilateration point
     var myLocation = estimateLocation(distancesMap).realToImage();
 
     return LocationResult(myLocation.toOffset(), distancesMap.map((key, value) => MapEntry(key.realToImage(), value * TranslationConstants.pixelsPerMeter)));
+  }
+
+  static double rssiToDistance(int rssiAtZeroDistance, int rssi) {
+    double powerD0 = rssiAtZeroDistance.toDouble();
+    double powerD = rssi.toDouble();
+    double d0 = 1;
+    double n = 3;
+    return d0 * pow(10, (powerD0 - powerD) / (10 * n));
   }
 
   static RealSpacePoint estimateLocation(Map<RealSpacePoint, double> distances) {
@@ -57,7 +49,6 @@ class Trilateration {
     RealSpacePoint guess = RealSpacePoint(avgX, avgY);
 
     // return gradientDescent(distances, guess);
-
     return leastSquares(distances, guess);
   }
 
@@ -80,13 +71,10 @@ class Trilateration {
         double error = actualDistance - expectedDistance;
         dx += error * (guess.x - anchor.x) / actualDistance;
         dy += error * (guess.y - anchor.y) / actualDistance;
-        // print("Gradient of squared error: $error");
       }
 
       guess = RealSpacePoint(guess.x - learningRate * dx, guess.y - learningRate * dy);
-      // print("Guess: $guess");
     }
-
     return guess;
   }
 
